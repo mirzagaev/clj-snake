@@ -1,6 +1,6 @@
 (ns clj-snake.core-test
   (:require [clojure.test :refer :all]
-            [clj-snake.core :refer :all]))
+            [clj-snake.app :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
