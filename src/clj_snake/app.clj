@@ -23,10 +23,10 @@
    KeyEvent/VK_DOWN [ 0 1]})
 
 ;; COLORs
-(def background-color (Color/decode "#DFDCE3"))
-(def snake-color (Color/decode "#4ABDAC"))
-(def apple-color (Color/decode "#F74733"))
-(def text-color (Color/decode "#666666"))
+(def background-color (Color/decode "#aad751"))
+(def snake-color (Color/decode "#3d6adc"))
+(def apple-color (Color/decode "#e8481d"))
+(def text-color (Color/decode "#222222"))
 
 ;;; pure section
 (defn quantum [level]
@@ -55,7 +55,7 @@
    :dir   [1 0]
    :color snake-color})
 
-(defn new-apple-for []
+(defn new-apple []
   "Neuen Apfel generieren"
   {:body  [[(rand-int c-width)
             (rand-int c-height)]]
@@ -88,8 +88,19 @@
                (cons (add-points (first body) dir)
                      (if grows body (butlast body)))))
 
+(defn eats-apple? [{[head] :body} {[apple] :body}]
+  "True when snake eats apple"
+  (= head apple))
+
 (defn turn [snake dir]
   (assoc snake :dir dir))
+
+(defn restart [snake apple pause]
+  "Reset the game"
+  (dosync
+    (ref-set snake (new-snake))
+    (ref-set apple (new-apple))
+    (ref-set pause true)))
 
 (defn update-dir [snake dir]
   "Updates direction of snake."
@@ -99,6 +110,11 @@
 (defn update-pos [snake apple]
   "Updates positions of snake and apple"
   (dosync
+    (if (eats-apple? @snake @apple)
+      (do (ref-set apple (new-apple))
+          (alter snake move true)
+          (println "Apfel gegessen"))
+      )
     (alter snake move false))
   nil)
 
@@ -109,14 +125,16 @@
       (.setColor color)
       (.fillRect x y w h))))
 
-(defn introduction [g]
+(defn introduction [g level]
   "Introduction Content"
   (doto g
     (.setColor text-color)
+    (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 30))
+    (.drawString "Welcome in our snake game" 20 50)
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
-    (.drawString "Welcome in our snake game" 0 50)))
+    (.drawString level 40 90)))
 
-(defn spiel-panel [snake apple key-code-atom pause timer]
+(defn spiel-panel [snake apple level pause timer]
   "Spiel Panel wird erstellt"
   (proxy [JPanel ActionListener KeyListener]
          []                                                 ; superclass constructor arguments
@@ -124,7 +142,7 @@
     (paintComponent [g]
       (proxy-super paintComponent g)
       (if @pause
-        (introduction g)
+        (introduction g (str "Level: " @level))
         (do (paint g @snake)
             (paint g @apple))
         )
@@ -135,7 +153,7 @@
         (println "Move"))
       (when (lose? @snake)
         (println "Verloren")
-        (System/exit 0))
+        (restart snake apple pause))
       (.repaint this))
     (keyPressed [e]
       (println "Taste gedrückt")
@@ -152,7 +170,7 @@
   "Hier beginnt die Spielkonfiguration"
   (let [frame (JFrame. "Snake")
         snake (ref (new-snake))
-        apple (ref (new-apple-for))
+        apple (ref (new-apple))
         level (atom 0)
         pause (ref true)
         timer (Timer. (quantum @level) nil)
