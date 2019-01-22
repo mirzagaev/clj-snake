@@ -1,6 +1,7 @@
 (ns clj-snake.app
+  (:use clojure.pprint)
   (:import (java.awt Color Dimension Font)
-           (javax.swing JPanel JFrame Timer JOptionPane)
+           (javax.swing JPanel JFrame Timer JOptionPane JButton)
            (java.awt.event ActionListener KeyListener KeyEvent))
   (:gen-class))
 
@@ -95,19 +96,19 @@
 (defn turn [snake dir]
   (assoc snake :dir dir))
 
-(defn restart [snake apple pause]
+(defn restart-game [snake apple pause]
   "Reset the game"
   (dosync
     (ref-set snake (new-snake))
     (ref-set apple (new-apple))
     (ref-set pause true)))
 
-(defn update-dir [snake dir]
+(defn update-direction [snake dir]
   "Updates direction of snake."
   (when dir
     (dosync (alter snake turn dir))))
 
-(defn update-pos [snake apple]
+(defn update-position [snake apple]
   "Updates positions of snake and apple"
   (dosync
     (if (eats-apple? @snake @apple)
@@ -125,7 +126,28 @@
       (.setColor color)
       (.fillRect x y w h))))
 
-(defn introduction [g level]
+(defn pausiere_das_spiel [timer pause]
+  "Spiel pausieren"
+  (println "Pausieren")
+  (dosync
+    (.stop timer)
+    (ref-set pause true)))
+
+(defn setze_das_spiel_fort [timer pause]
+  "Spiel fortsetzen"
+  (println "Fortsetzen")
+  (dosync
+    (.start timer)
+    (ref-set pause false)))
+
+(defn leertaste_pushet [timer pause]
+  "Mit einer Leertaste wird das Spiel pausiert"
+  (println pause)
+  (if @pause
+    (setze_das_spiel_fort timer pause)
+    (pausiere_das_spiel timer pause)))
+
+(defn intro [g level]
   "Introduction Content"
   (doto g
     (.setColor text-color)
@@ -142,24 +164,26 @@
     (paintComponent [g]
       (proxy-super paintComponent g)
       (if @pause
-        (introduction g (str "Level: " @level))
+        (intro g (str "Level: " @level))
         (do (paint g @snake)
             (paint g @apple))
         )
       )
     (actionPerformed [e]
       (when-not @pause
-        (update-pos snake apple)
+        (update-position snake apple)
         (println "Move"))
       (when (lose? @snake)
         (println "Verloren")
-        (restart snake apple pause))
+        (restart-game snake apple pause))
       (.repaint this))
     (keyPressed [e]
       (println "Taste gedrückt")
+      (if ( = (.getKeyCode e) 32)
+        (leertaste_pushet timer pause))
       (if @pause
         (dosync (ref-set pause false))
-        (update-dir snake (dirs (.getKeyCode e))))
+        (update-direction snake (dirs (.getKeyCode e))))
       )
     (windowClosed []
       (System/exit 0))
@@ -174,6 +198,7 @@
         level (atom 0)
         pause (ref true)
         timer (Timer. (quantum @level) nil)
+        start-button (JButton. "START")
         panel (spiel-panel snake apple level pause timer)]
     (doto panel
       (.setFocusable true)
