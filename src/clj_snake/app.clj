@@ -25,8 +25,8 @@
 
 ;; COLORs
 (def background-color (Color/decode "#aad751"))
-(def snake-color (Color/decode "#3d6adc"))
-(def apple-color (Color/decode "#e8481d"))
+(def snake-color (Color/decode "#c96f2b"))
+(def apple-color (Color/decode "#45a163"))
 (def text-color (Color/decode "#222222"))
 
 ;;; pure section
@@ -62,7 +62,7 @@
             (rand-int c-height)]]
    :color apple-color})
 
-;; functional operations
+;; FUNKTIONELLE OPERATIONEN
 (defn eats-self? [[head & tail]]
   (contains? (set tail) head))
 
@@ -108,12 +108,13 @@
   (when dir
     (dosync (alter snake turn dir))))
 
-(defn update-position [snake apple]
+(defn update-position [snake apple level]
   "Updates positions of snake and apple"
   (dosync
     (if (eats-apple? @snake @apple)
       (do (ref-set apple (new-apple))
           (alter snake move true)
+          (swap! level inc)
           (println "Apfel gegessen"))
       )
     (alter snake move false))
@@ -126,35 +127,35 @@
       (.setColor color)
       (.fillRect x y w h))))
 
-(defn pausiere_das_spiel [timer pause]
+(defn pausiere_das_spiel [{body :body} pause level]
   "Spiel pausieren"
   (println "Pausieren")
+  (println level)
   (dosync
-    (.stop timer)
     (ref-set pause true)))
 
-(defn setze_das_spiel_fort [timer pause]
+(defn setze_das_spiel_fort [pause]
   "Spiel fortsetzen"
-  (println "Fortsetzen")
+  (println "Pause aufgehoben")
   (dosync
-    (.start timer)
     (ref-set pause false)))
 
-(defn leertaste_pushet [timer pause]
-  "Mit einer Leertaste wird das Spiel pausiert"
-  (println pause)
-  (if @pause
-    (setze_das_spiel_fort timer pause)
-    (pausiere_das_spiel timer pause)))
-
 (defn intro [g level]
-  "Introduction Content"
+  "Einführung"
   (doto g
     (.setColor text-color)
+
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 30))
-    (.drawString "Welcome in our snake game" 20 50)
+    (.drawString "clj-game SNAKE von am180" 20 50)
+
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
-    (.drawString level 40 90)))
+    (.drawString "Für START beliebige Taste drücken" 20 100)
+
+    (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
+    (.drawString "Mit Leertaste das Spiel pausieren bzw. fortführen" 20 130)
+
+    (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
+    (.drawString level 20 160)))
 
 (defn spiel-panel [snake apple level pause timer]
   "Spiel Panel wird erstellt"
@@ -165,13 +166,14 @@
       (proxy-super paintComponent g)
       (if @pause
         (intro g (str "Level: " @level))
-        (do (paint g @snake)
-            (paint g @apple))
+        (do
+          (paint g @snake)
+          (paint g @apple))
         )
       )
     (actionPerformed [e]
       (when-not @pause
-        (update-position snake apple)
+        (update-position snake apple level)
         (println "Move"))
       (when (lose? @snake)
         (println "Verloren")
@@ -180,10 +182,13 @@
     (keyPressed [e]
       (println "Taste gedrückt")
       (if ( = (.getKeyCode e) 32)
-        (leertaste_pushet timer pause))
-      (if @pause
-        (dosync (ref-set pause false))
-        (update-direction snake (dirs (.getKeyCode e))))
+        (if-not @pause
+          (pausiere_das_spiel @snake pause @level)
+          (setze_das_spiel_fort pause))
+        (do
+          (if @pause
+            (dosync (ref-set pause false))
+            (update-direction snake (dirs (.getKeyCode e))))))
       )
     (windowClosed []
       (System/exit 0))
@@ -198,7 +203,6 @@
         level (atom 0)
         pause (ref true)
         timer (Timer. (quantum @level) nil)
-        start-button (JButton. "START")
         panel (spiel-panel snake apple level pause timer)]
     (doto panel
       (.setFocusable true)
@@ -217,5 +221,5 @@
     [snake apple level timer]))
 
 (defn -main [& args]
-  "Die Hauptfunktion."
+  "Ausgangsfunktion."
   (spiel))
