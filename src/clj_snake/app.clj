@@ -154,8 +154,9 @@
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
     (.drawString "Mit Leertaste das Spiel pausieren bzw. fortführen" 20 130)
 
+    (.setColor apple-color)
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
-    (.drawString level 20 160)))
+    (.drawString level 20 180)))
 
 (defn spiel-panel [snake apple level pause timer]
   "Spiel Panel wird erstellt"
@@ -165,7 +166,7 @@
     (paintComponent [g]
       (proxy-super paintComponent g)
       (if @pause
-        (intro g (str "Level: " @level))
+        (intro g (str "Äpfel: " @level))
         (do
           (paint g @snake)
           (paint g @apple))
