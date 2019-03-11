@@ -8,7 +8,7 @@
 ;; KONSTANTEN
 (def c-width   "number of horizontal elements on the court" 30)
 (def c-height "number of vertical elements on the court" 30)
-(def e-size "size of an element in pixels" 20)
+(def e-size "size of an element in pixels" 30)
 (def p-width (* c-width e-size))
 (def p-height (* c-height e-size))
 (def millsec 100)
