@@ -5,18 +5,13 @@
            (java.awt.event ActionListener KeyListener KeyEvent))
   (:gen-class))
 
-
 ;; KONSTANTEN
 (def c-width   "number of horizontal elements on the court" 30)
 (def c-height "number of vertical elements on the court" 30)
 (def e-size "size of an element in pixels" 20)
 (def p-width (* c-width e-size))
 (def p-height (* c-height e-size))
-(def i-quantum "initial duration of repainting period"      100)
-(def d-quantum "change of the duration for two succ levels" -5)
-(def m-quantum "limit for the duration"                     50)
-(def i-length  "initial length for the snake to win"        5)
-(def d-length "change of the length for two succ levels" 3)
+(def millsec 100)
 (def dirs      "mapping from even code to direction"
   {KeyEvent/VK_LEFT  [-1  0]
    KeyEvent/VK_RIGHT [ 1  0]
@@ -28,17 +23,6 @@
 (def snake-color (Color/decode "#c96f2b"))
 (def apple-color (Color/decode "#45a163"))
 (def text-color (Color/decode "#222222"))
-
-;;; pure section
-(defn quantum [level]
-  "Evaluates period of repainting based on level."
-  (max (+ i-quantum (* level d-quantum)) m-quantum))
-
-(defn length [level]
-  "Evaluates length of the snake that will cause win."
-  (+ i-length (* level d-length)))
-
-(def length (memoize length)) ; the function is called every period
 
 (defn screen-rect [[x y]]
   "Converts a pair of coordinates into x, y, width, and height of a
@@ -67,36 +51,31 @@
   (contains? (set tail) head))
 
 (defn eats-border? [[[x y]]]
-  "true if snake eats the border"
   (or (>= x c-width)
       (>= y c-height)
       (< x 0)
       (< y 0)))
 
 (defn lose? [{body :body}]
-  "Snake loses when it eats something but the apple"
   (or (eats-self? body)
       (eats-border? body)))
 
 ;; GUI
 (defn add-points [[x0 y0] [x1 y1]]
-  "Adds two points, used to shift head to the snake."
   [(+ x0 x1) (+ y0 y1)])
 
 (defn move [{:keys [body dir] :as snake} grows]
-  "Evaluates snake after one move."
   (assoc snake :body
                (cons (add-points (first body) dir)
                      (if grows body (butlast body)))))
 
 (defn eats-apple? [{[head] :body} {[apple] :body}]
-  "True when snake eats apple"
   (= head apple))
 
 (defn turn [snake dir]
   (assoc snake :dir dir))
 
-(defn restart-game [snake apple pause]
+(defn restart-game [snake apple pause level]
   "Reset the game"
   (dosync
     (ref-set snake (new-snake))
@@ -178,7 +157,7 @@
         (println "Move"))
       (when (lose? @snake)
         (println "Verloren")
-        (restart-game snake apple pause))
+        (restart-game snake apple pause level))
       (.repaint this))
     (keyPressed [e]
       (println "Taste gedrückt")
@@ -203,7 +182,7 @@
         apple (ref (new-apple))
         level (atom 0)
         pause (ref true)
-        timer (Timer. (quantum @level) nil)
+        timer (Timer. millsec nil)
         panel (spiel-panel snake apple level pause timer)]
     (doto panel
       (.setFocusable true)
