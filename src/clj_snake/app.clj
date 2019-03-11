@@ -106,10 +106,9 @@
       (.setColor color)
       (.fillRect x y w h))))
 
-(defn pausiere_das_spiel [{body :body} pause level]
+(defn pausiere_das_spiel [pause]
   "Spiel pausieren"
   (println "Pausieren")
-  (println level)
   (dosync
     (ref-set pause true)))
 
@@ -163,7 +162,7 @@
       (println "Taste gedrückt")
       (if ( = (.getKeyCode e) 32)
         (if-not @pause
-          (pausiere_das_spiel @snake pause @level)
+          (pausiere_das_spiel pause)
           (setze_das_spiel_fort pause))
         (do
           (if @pause
