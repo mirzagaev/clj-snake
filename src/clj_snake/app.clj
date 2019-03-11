@@ -17,8 +17,6 @@
    KeyEvent/VK_RIGHT [ 1  0]
    KeyEvent/VK_UP    [ 0 -1]
    KeyEvent/VK_DOWN [ 0 1]})
-
-;; COLORs
 (def background-color (Color/decode "#aad751"))
 (def snake-color (Color/decode "#c96f2b"))
 (def apple-color (Color/decode "#45a163"))
@@ -32,8 +30,6 @@
 
 (def screen-rect (memoize screen-rect)) ; creating 'table' of relations
 
-
-;; ZUFÄLLIG
 (defn new-snake []
   "Neuer Schlange generieren"
   {:body  (list [1 1])
@@ -46,7 +42,6 @@
             (rand-int c-height)]]
    :color apple-color})
 
-;; FUNKTIONELLE OPERATIONEN
 (defn eats-self? [[head & tail]]
   (contains? (set tail) head))
 
@@ -60,7 +55,6 @@
   (or (eats-self? body)
       (eats-border? body)))
 
-;; GUI
 (defn add-points [[x0 y0] [x1 y1]]
   [(+ x0 x1) (+ y0 y1)])
 
@@ -122,16 +116,12 @@
   "Einführung"
   (doto g
     (.setColor text-color)
-
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 30))
     (.drawString "clj-game SNAKE von am180" 20 50)
-
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
     (.drawString "Für START beliebige Taste drücken" 20 100)
-
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
     (.drawString "Mit Leertaste das Spiel pausieren bzw. fortführen" 20 130)
-
     (.setColor apple-color)
     (.setFont (Font. "Tahoma" Font/TRUETYPE_FONT 20))
     (.drawString level 20 180)))
